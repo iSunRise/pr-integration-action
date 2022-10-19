@@ -1,0 +1,36 @@
+name: "PR integration action"
+description: "Automatically integrates approved Pull Requests into specified branch"
+
+branding:
+  icon: "git-pull-request"
+  color: "blue"
+
+inputs:
+  repository:
+    description: "Repository name with owner. For example, my-org/repo-test"
+    default: ${{ github.repository }}
+
+  github_token:
+    description: 'Token for the repository. Can be passed in using `{{ secrets.GITHUB_TOKEN }}`.'
+    default: ${{ github.token }}
+
+  integration_branch:
+    description: Name of the branch where the integrated PRs will be merged. The branch will be reset to current master before integration.
+    default: stage
+
+  approve_label:
+    description: Label to check PRs to be integrated
+    default: Approved
+
+  integrated_label:
+    description: Label used to mark Integrated PRs
+    default: Integrated
+
+
+outputs:
+  haveUpdates:
+    description: 'Indicates whether any new or updated PRs were integrated'
+
+runs:
+  using: 'node16'
+  main: 'entrypoint.js'
