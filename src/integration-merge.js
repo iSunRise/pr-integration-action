@@ -120,8 +120,7 @@ async function integrationMerge({octokit, token, integrationBranch, approveLabel
     await git.push(path, true, integrationBranch, integrationBranch);
 
     // clear labels from not merged PRs and set labels to merged ones
-    await clearIntegratedLabels({octokit, pullRequests: openRequests, integratedLabel, repo, owner});
-    await setIntegratedLabels({octokit, pullRequests: mergedPrs, integratedLabel, repo, owner});
+    await updateIntegratedLabels({octokit, integratedRequests: mergedPrs, allRequests: openRequests, integratedLabel, repo, owner});
 
     core.info('Integration merge complete');
     return true;
@@ -243,9 +242,12 @@ async function writeIntegrationVersion(path) {
 }
 
 
-async function clearIntegratedLabels({octokit, pullRequests, integratedLabel, repo, owner}) {
-  core.info("Clear integration labels");
-  for (const pullRequest of pullRequests) {
+async function updateIntegratedLabels({octokit, integratedRequests, allRequests, integratedLabel, repo, owner}) {
+  core.info("Update Integrated labels");
+
+  // remove IntegratedLabel for allRequests that's not in integratedRequests
+  const nonIntegratedPrs = allRequests.filter(pr => !integratedRequests.includes(pr));
+  for (const pullRequest of nonIntegratedPrs) {
     try {
       await octokit.issues.removeLabel({ owner, repo, issue_number: pullRequest.number, name: integratedLabel});
     }
@@ -254,14 +256,12 @@ async function clearIntegratedLabels({octokit, pullRequests, integratedLabel, re
       core.debug(e);
     }
   }
-}
 
-
-async function setIntegratedLabels({octokit, pullRequests, integratedLabel, repo, owner}) {
-  core.info("Set integration labels");
-  for (const pullRequest of pullRequests) {
+  // add IntegratedLabel for allRequests that are in integratedRequests
+  for (const pullRequest of integratedRequests) {
     await octokit.issues.addLabels({ owner, repo, issue_number: pullRequest.number, labels: [integratedLabel]});
   }
 }
+
 
 export default integrationMerge;
