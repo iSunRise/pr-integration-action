@@ -1,6 +1,6 @@
 {
   "name": "pr-integration-action",
-  "version": "1.0.1",
+  "version": "2.0.2",
   "description": "GitHub action that integrates approved PRs into specified branch",
   "author": "Brokermint",
   "license": "MIT",

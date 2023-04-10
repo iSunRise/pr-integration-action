@@ -7,15 +7,19 @@ branding:
 
 inputs:
   repository:
-    description: "Repository name with owner. For example, my-org/repo-test"
+    description: Repository name with owner. For example, my-org/repo-test
     default: ${{ github.repository }}
 
   github_token:
-    description: 'Token for the repository. Can be passed in using `{{ secrets.GITHUB_TOKEN }}`.'
+    description: Token for the repository. Can be passed in using `{{ secrets.GITHUB_TOKEN }}`
     default: ${{ github.token }}
 
+  token_with_workflow_scope:
+    description: |
+      Optional personal access github token with workflow scope. Allows to merge PRs containing changes in github workflow files
+
   integration_branch:
-    description: Name of the branch where the integrated PRs will be merged. The branch will be reset to current master before integration.
+    description: Name of the branch where the integrated PRs will be merged. The branch will be reset to current master before integration
     default: stage
 
   approve_label:
@@ -29,7 +33,7 @@ inputs:
 
 outputs:
   haveUpdates:
-    description: 'Indicates whether any new or updated PRs were integrated'
+    description: Indicates whether any new or updated PRs were integrated. Values 'yes', 'no'
 
 runs:
   using: 'node16'

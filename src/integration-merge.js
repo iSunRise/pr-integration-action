@@ -9,7 +9,7 @@ import git from './git.js';
 const MAX_PR_COUNT = 25;
 
 
-async function integrationMerge({octokit, token, integrationBranch, approveLabel, integratedLabel, owner, repo}) {
+async function integrationMerge({octokit, gitToken, integrationBranch, approveLabel, integratedLabel, owner, repo}) {
 
   // git clone {repo}
   // git checkout {integrationBranch}
@@ -43,7 +43,7 @@ async function integrationMerge({octokit, token, integrationBranch, approveLabel
 
   return await tmpdir(async path => {
     core.info(`Cloning 'master' into ${path}`);
-    const url = `https://x-access-token:${token}@github.com/${owner}/${repo}.git`;
+    const url = `https://x-access-token:${gitToken}@github.com/${owner}/${repo}.git`;
     await git.clone(url, path, "master");
 
     // line below can be used for local testing, it will skip main repo checkout...

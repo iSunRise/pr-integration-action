@@ -20,11 +20,21 @@ async function main() {
 
     const token = core.getInput('github_token', {required: true});
 
+    // optional personal access github token with workflow scope
+    // allows to merge PRs containing changes in github workflow files
+    // see https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps#available-scopes
+    // https://docs.github.com/en/actions/security-guides/automatic-token-authentication#granting-additional-permissions
+    // personal access token can't be used for all action's operations since it will re-trigger workflows
+    // and create a workflow cycles
+    // e.g. setting label on PR will trigger "labeled" event and in its turn will re-trigger workflow
+    // default GITHUB_TOKEN is a special one, and does not trigger workflows
+    const tokenWithWorkflowScope = core.getInput('token_with_workflow_scope');
 
     // execute merge
     const octokit = new Octokit({ auth: `token ${token}` });
 
-    let result = await integrationMerge({ octokit, token, integrationBranch, approveLabel, integratedLabel, owner, repo })
+    let result = await integrationMerge({ octokit, gitToken: tokenWithWorkflowScope || token,
+                                          integrationBranch, approveLabel, integratedLabel, owner, repo })
 
     // set output
     core.info(`set output haveUpdates: ${result ? 'yes' : 'no'}`)
