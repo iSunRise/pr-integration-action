@@ -50,7 +50,7 @@ async function integrationMerge({octokit, gitToken, masterBranch, integrationBra
     // to use local setup - comment git.clone above, and uncomment line below
     // await git.checkout(path, masterBranch);
 
-    if (await arePrsAlreadyIntegrated(pullRequests, path, integrationBranch)) {
+    if (await arePrsAlreadyIntegrated(pullRequests, path, masterBranch, integrationBranch)) {
       core.info("All PRs already integrated.");
       return false;
     }
@@ -152,7 +152,7 @@ function skipPullRequest(approveLabel, pullRequest) {
 }
 
 
-async function arePrsAlreadyIntegrated(pullRequests, gitPath, integrationBranch) {
+async function arePrsAlreadyIntegrated(pullRequests, gitPath, masterBranch, integrationBranch) {
 
   const fullBranch = `origin/${integrationBranch}`;
 
