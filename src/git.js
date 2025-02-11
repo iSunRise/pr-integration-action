@@ -153,10 +153,10 @@ async function isBranchExists(dir, branch) {
 }
 
 
-async function commitsToMasterHead(dir, branch) {
+async function commitsToMasterHead(dir, masterBranch, branch) {
   // number of commits from branching point to current master head
   // git rev-list --left-only --count origin/master...origin/stage
-  const count = await git(dir, "rev-list", "--left-only", "--count", `master...${branch}`);
+  const count = await git(dir, "rev-list", "--left-only", "--count", `${masterBranch}...${branch}`);
   return parseInt(count);
 }
 

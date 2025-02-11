@@ -9,11 +9,11 @@ import git from './git.js';
 const MAX_PR_COUNT = 25;
 
 
-async function integrationMerge({octokit, gitToken, integrationBranch, approveLabel, integratedLabel, owner, repo}) {
+async function integrationMerge({octokit, gitToken, masterBranch, integrationBranch, approveLabel, integratedLabel, owner, repo}) {
 
   // git clone {repo}
   // git checkout {integrationBranch}
-  // git reset --hard master
+  // git reset --hard masterBranch
   // each PR{i}
   //   git fetch origin pulls\{id}\head:pr{i}
   //   git merge --squash pr{i}
@@ -42,21 +42,21 @@ async function integrationMerge({octokit, gitToken, integrationBranch, approveLa
   }
 
   return await tmpdir(async path => {
-    core.info(`Cloning 'master' into ${path}`);
+    core.info(`Cloning '${masterBranch}' into ${path}`);
     const url = `https://x-access-token:${gitToken}@github.com/${owner}/${repo}.git`;
-    await git.clone(url, path, "master");
+    await git.clone(url, path, masterBranch);
 
     // line below can be used for local testing, it will skip main repo checkout...
     // to use local setup - comment git.clone above, and uncomment line below
-    // await git.checkout(path, "master");
+    // await git.checkout(path, masterBranch);
 
     if (await arePrsAlreadyIntegrated(pullRequests, path, integrationBranch)) {
       core.info("All PRs already integrated.");
       return false;
     }
 
-    core.info(`Reset integration branch '${integrationBranch}' to 'master'`);
-    await git.createBranch(path, integrationBranch, "master", true);
+    core.info(`Reset integration branch '${integrationBranch}' to '${masterBranch}'`);
+    await git.createBranch(path, integrationBranch, masterBranch, true);
 
     core.info(`Checkout integration branch '${integrationBranch}'`);
     await git.checkout(path, integrationBranch);
@@ -162,8 +162,8 @@ async function arePrsAlreadyIntegrated(pullRequests, gitPath, integrationBranch)
   }
 
   // test that master is the same - check if integration branch spawned from it's HEAD
-  if (await git.commitsToMasterHead(gitPath, fullBranch) !== 0) {
-    core.info('Master has updates, need to rebuild integration branch.');
+  if (await git.commitsToMasterHead(gitPath, masterBranch, fullBranch) !== 0) {
+    core.info(`'${masterBranch}' has updates, need to rebuild integration branch.`);
     return false;
   }
 

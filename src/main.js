@@ -14,6 +14,7 @@ async function main() {
     const repository = core.getInput('repository') || `${github.context.repo.owner}/${github.context.repo.repo}`;
     const [owner, repo] = repository.split('/')
 
+    const masterBranch = core.getInput('master_branch') || "master";
     const integrationBranch = core.getInput('integration_branch') || "stage";
     const approveLabel = core.getInput('approve_label') || "Approved";
     const integratedLabel = core.getInput('integrated_label') || "Integrated";
@@ -33,7 +34,7 @@ async function main() {
     // execute merge
     const octokit = new Octokit({ auth: `token ${token}` });
 
-    let result = await integrationMerge({ octokit, gitToken: tokenWithWorkflowScope || token,
+    let result = await integrationMerge({ octokit, gitToken: tokenWithWorkflowScope || token, masterBranch,
                                           integrationBranch, approveLabel, integratedLabel, owner, repo })
 
     // set output

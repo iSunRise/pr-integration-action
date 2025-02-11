@@ -18,6 +18,10 @@ inputs:
     description: |
       Optional personal access github token with workflow scope. Allows to merge PRs containing changes in github workflow files
 
+  master_branch:
+    description: Name of the master branch
+    default: master
+
   integration_branch:
     description: Name of the branch where the integrated PRs will be merged. The branch will be reset to current master before integration
     default: stage
