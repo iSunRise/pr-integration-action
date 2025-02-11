@@ -27,7 +27,7 @@ async function integrationMerge({octokit, gitToken, masterBranch, integrationBra
     repo: repo,
     state: "open",
     sort: "created",
-    direction: "desc",
+    direction: "asc",
     per_page: MAX_PR_COUNT
   });
   core.info(`Got ${openRequests.length} PRs`);
