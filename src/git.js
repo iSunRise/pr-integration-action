@@ -166,6 +166,34 @@ async function addFile(dir, file) {
 }
 
 
+async function getFileFromStage(dir, stage, file) {
+  // Get file content from specific stage during merge conflict
+  // stage: 'base' = common ancestor (stage 1)
+  // stage: 'ours' = current branch (stage 2)
+  // stage: 'theirs' = incoming branch (stage 3)
+  const stageNumbers = {
+    'base': 1,
+    'ours': 2,
+    'theirs': 3
+  };
+
+  const stageNumber = stageNumbers[stage];
+  if (!stageNumber) {
+    throw new Error(`Invalid stage '${stage}'. Must be one of: base, ours, theirs`);
+  }
+
+  return await git(dir, "show", `:${stageNumber}:${file}`);
+}
+
+
+async function mergeFiles(dir, file, tempFile) {
+  // Perform three-way merge: merge tempFile into file using file as base
+  // git merge-file <current-file> <base-file> <other-file>
+  // In our case: merge tempFile into file, using file as both current and base
+  return await git(dir, "merge-file", file, file, tempFile);
+}
+
+
 export default {
   ExitError,
   createBranch,
@@ -181,5 +209,7 @@ export default {
   listBranchCommitMessages,
   isBranchExists,
   commitsToMasterHead,
-  addFile
+  addFile,
+  getFileFromStage,
+  mergeFiles
 };

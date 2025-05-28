@@ -3,6 +3,7 @@ import fse from 'fs-extra';
 
 import { tmpdir } from './common.js';
 import git from './git.js';
+import resolvePackageJsonConflict from './resolve-package-json-conflict.js';
 
 
 // limit the number of integrated PRs
@@ -196,13 +197,7 @@ async function solveMergeConflict(git, path, file) {
     return true
   }
   else if (file === "package.json") {
-    // this is not perfectly fine
-    // we need to check if the conflict happens on the version line only
-    // and set version to some text, so other file parts can be auto-merged
-    // if there more unresolved conflicts then version -> we can't resolve
-    core.info("       resolve with 'theirs' package.json");
-    await git.checkoutConflictedFile(path, "package.json", "theirs");
-    return true
+    return await resolvePackageJsonConflict(git, path, file);
   }
 
   return false
