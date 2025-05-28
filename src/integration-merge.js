@@ -199,6 +199,12 @@ async function solveMergeConflict(git, path, file) {
   else if (file === "package.json") {
     return await resolvePackageJsonConflict(git, path, file);
   }
+  else if (file === "package-lock.json") {
+    // this is not correct, however, in stage environment we use "npm install" that will "fix" lock file
+    core.info("       resolve with 'theirs' package-lock.json");
+    await git.checkoutConflictedFile(path, "package-lock.json", "theirs");
+    return true
+  }
 
   return false
 }
