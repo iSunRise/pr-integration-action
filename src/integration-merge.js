@@ -3,14 +3,14 @@ import fse from 'fs-extra';
 
 import { tmpdir } from './common.js';
 import git from './git.js';
-import resolvePackageJsonConflict from './resolve-package-json-conflict.js';
+import ConflictsResolution from './conflicts-resolution/conflicts-resolution.js';
 
 
 // limit the number of integrated PRs
 const MAX_PR_COUNT = 25;
 
 
-async function integrationMerge({octokit, gitToken, masterBranch, integrationBranch, approveLabel, integratedLabel, owner, repo}) {
+async function integrationMerge({octokit, gitToken, masterBranch, integrationBranch, approveLabel, integratedLabel, owner, repo, conflictsResolutionRulesFilePath}) {
 
   // git clone {repo}
   // git checkout {integrationBranch}
@@ -62,6 +62,9 @@ async function integrationMerge({octokit, gitToken, masterBranch, integrationBra
     core.info(`Checkout integration branch '${integrationBranch}'`);
     await git.checkout(path, integrationBranch);
 
+    const rulesPath = conflictsResolutionRulesFilePath ? `${path}/${conflictsResolutionRulesFilePath}`.replace("//", "/") : null;
+    const conflictsResolution = new ConflictsResolution(rulesPath);
+
     let mergedPrs = [];
     let failedPrs = [];
     for (const pullRequest of pullRequests) {
@@ -87,7 +90,7 @@ async function integrationMerge({octokit, gitToken, masterBranch, integrationBra
 
           let resolved = true
           for (const file of files) {
-            if (!await solveMergeConflict(git, path, file)) {
+            if (!await conflictsResolution.resolveConflict(git, path, file)) {
               // there are more conflicts then we can solve...
               // rollback merge and proceed with next PR
               core.info(`     ! PR ${prNumber} merge failed. Skipping.`);
@@ -181,32 +184,6 @@ async function arePrsAlreadyIntegrated(pullRequests, gitPath, masterBranch, inte
 
   const allPrsMerged = prShas.length === mergedShas.length && prShas.every(sha => mergedShas.includes(sha));
   return allPrsMerged;
-}
-
-
-async function solveMergeConflict(git, path, file) {
-
-  if (file === "version.rb") {
-    core.info("       resolve with 'theirs' version.rb");
-    await git.checkoutConflictedFile(path, "version.rb", "theirs");
-    return true
-  }
-  else if (file === "db/schema.rb") {
-    core.info("       resolve with 'theirs' db/schema.rb");
-    await git.checkoutConflictedFile(path, "db/schema.rb", "theirs");
-    return true
-  }
-  else if (file === "package.json") {
-    return await resolvePackageJsonConflict(git, path, file);
-  }
-  else if (file === "package-lock.json") {
-    // this is not correct, however, in stage environment we use "npm install" that will "fix" lock file
-    core.info("       resolve with 'theirs' package-lock.json");
-    await git.checkoutConflictedFile(path, "package-lock.json", "theirs");
-    return true
-  }
-
-  return false
 }
 
 

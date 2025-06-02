@@ -31,11 +31,16 @@ async function main() {
     // default GITHUB_TOKEN is a special one, and does not trigger workflows
     const tokenWithWorkflowScope = core.getInput('token_with_workflow_scope');
 
+    // optional, specifies path to the file with conflicts resolution rules (see )
+    const conflictsResolutionRulesFilePath = core.getInput('conflicts_resolution_rules_file_path') ||
+                                             './github/settings/pr-integration-action-conflicts-resolution-rules.yml';
+
     // execute merge
     const octokit = new Octokit({ auth: `token ${token}` });
 
     let result = await integrationMerge({ octokit, gitToken: tokenWithWorkflowScope || token, masterBranch,
-                                          integrationBranch, approveLabel, integratedLabel, owner, repo })
+                                          integrationBranch, approveLabel, integratedLabel, owner, repo,
+                                          conflictsResolutionRulesFilePath });
 
     // set output
     core.info(`set output haveUpdates: ${result ? 'yes' : 'no'}`)
