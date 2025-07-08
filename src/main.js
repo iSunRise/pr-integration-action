@@ -32,8 +32,7 @@ async function main() {
     const tokenWithWorkflowScope = core.getInput('token_with_workflow_scope');
 
     // optional, specifies path to the file with conflicts resolution rules (see )
-    const conflictsResolutionRulesFilePath = core.getInput('conflicts_resolution_rules_file_path') ||
-                                             './github/settings/pr-integration-action-conflicts-resolution-rules.yml';
+    const conflictsResolutionRulesFilePath = core.getInput('conflicts_resolution_rules_file_path');
 
     // execute merge
     const octokit = new Octokit({ auth: `token ${token}` });

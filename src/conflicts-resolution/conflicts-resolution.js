@@ -1,9 +1,15 @@
 import { parse } from 'yaml';
 import fse from 'fs-extra';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
 import * as core from '@actions/core';
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
 class ConflictsResolution {
-  rulesFilePath = './src/conflicts-resolution/conflicts-resolution-rules.yml';
+  DEFAULT_RULES_FILE_PATH = resolve(__dirname, './conflicts-resolution-rules.yml');
+
+  rulesFilePath = this.DEFAULT_RULES_FILE_PATH;
   rules = null;
 
   constructor(rulesFilePath = null) {
@@ -12,14 +18,26 @@ class ConflictsResolution {
 
   async resolveConflict(git, path, file) {
     if (!this.rules) {
-      const yamlContent = await fse.readFile(this.rulesFilePath, 'utf8');
+      let yamlContent;
+      if (this.rulesFilePath && fse.existsSync(this.rulesFilePath)) {
+        yamlContent = await fse.readFile(this.rulesFilePath, 'utf8');
+      } else {
+        yamlContent = await fse.readFile(this.DEFAULT_RULES_FILE_PATH, 'utf8');
+      }
       this.rules = parse(yamlContent);
     }
 
     const rulesForFile = this.rules[file];
     if (!rulesForFile) return false;
 
-    const ignoreLines = rulesForFile.ignoreLines || [];
+    // Ignore our file and took incoming one
+    if (rulesForFile.ignore) {
+      await git.checkoutConflictedFile(path, file, "theirs");
+      return true;
+    }
+
+    // Take specific lines from incoming file, put into our and then try to merge again
+    const ignoreLines = rulesForFile.ignore_lines || [];
     if (ignoreLines.length > 0) {
       await this.applyIgnoreLinesRule(git, path, file, ignoreLines);
       await git.addFile(path, file);
@@ -55,14 +73,22 @@ class ConflictsResolution {
     const theirsContent = await git.getFileFromStage(path, 'theirs', file);
     const lineNumbers = [];
     for (const ignoreLine of ignoreLines) {
-      const lines = this.getLinesNumbers(oursContent, ignoreLine);
-      lineNumbers.push(...lines);
+      const ourLineNumbers = this.getLinesNumbers(oursContent, ignoreLine);
+      const theirLineNumbers = this.getLinesNumbers(theirsContent, ignoreLine);
+      // we are going to substitute content in our file on lines specified in ourLineNumbers
+      // with content from theirsContent on lines specified in theirLineNumbers
+      // so at least check that both files have same quantity of lines matched
+      if (ourLineNumbers.length === theirLineNumbers.length) {
+        lineNumbers.push([ourLineNumbers, theirLineNumbers]);
+      }
     }
     // now take lines by numbers specified in lineNumbers from theirsContent and insert in oursContent
     const theirLines = theirsContent.split('\n');
     const ourLines = oursContent.split('\n');
-    for (const lineNumber of lineNumbers) {
-      ourLines[lineNumber - 1] = theirLines[lineNumber - 1]; // line numbers start from 1
+    for (const [ourLineNumbers, theirLineNumbers] of lineNumbers) {
+      ourLineNumbers.forEach((ourLineNumber, index) => {
+        ourLines[ourLineNumber - 1] = theirLines[theirLineNumbers[index] - 1]; // line numbers start from 1
+      });
     }
     // save ours file
     await fse.writeFile(`${path}/${file}`, ourLines.join('\n'), 'utf8');

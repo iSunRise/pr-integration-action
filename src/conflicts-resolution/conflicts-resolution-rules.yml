@@ -1,4 +1,12 @@
 version.rb:
-  ignoreLines:
-    - '^ *MINOR'
-    - '^ *TINY'
+  ignore: true
+
+db/schema.rb:
+  ignore: true
+
+package.json:
+  ignore_lines:
+    - '"version":'
+
+package-lock.json:
+  ignore: true
